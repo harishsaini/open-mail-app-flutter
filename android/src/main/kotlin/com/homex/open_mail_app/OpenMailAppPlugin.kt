@@ -19,7 +19,7 @@ class OpenMailAppPlugin : FlutterPlugin, MethodCallHandler {
     private lateinit var channel: MethodChannel
     private lateinit var applicationContext: Context
 
-    override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
+    override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
         // Although getFlutterEngine is deprecated we still need to use it for
         // apps not updated to Flutter Android v2 embedding
         channel = MethodChannel(flutterPluginBinding.flutterEngine.dartExecutor, "open_mail_app")
@@ -50,7 +50,7 @@ class OpenMailAppPlugin : FlutterPlugin, MethodCallHandler {
         applicationContext = context
     }
 
-    override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
+    override fun onMethodCall(call: MethodCall, result: Result) {
         if (call.method == "openMailApp") {
             val opened = emailAppIntent(call.argument("nativePickerTitle") ?: "")
             result.success(opened)
@@ -72,11 +72,11 @@ class OpenMailAppPlugin : FlutterPlugin, MethodCallHandler {
         }
     }
 
-    override fun onDetachedFromEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
+    override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         channel.setMethodCallHandler(null)
     }
 
-    private fun emailAppIntent(@NonNull chooserTitle: String): Boolean {
+    private fun emailAppIntent(chooserTitle: String): Boolean {
         val emailIntent = Intent(Intent.ACTION_VIEW, Uri.parse("mailto:"))
         val packageManager = applicationContext.packageManager
 
@@ -121,8 +121,7 @@ class OpenMailAppPlugin : FlutterPlugin, MethodCallHandler {
         val activitiesHandlingEmails = packageManager.queryIntentActivities(emailIntent, 0)
         if (activitiesHandlingEmails.isNotEmpty()) {
             val emailAppChooserIntent = Intent.createChooser(Intent(Intent.ACTION_SENDTO).apply {
-                data = Uri.parse("mailto:")
-                type = "text/plain"
+                setDataAndType(Uri.parse("mailto:"),"text/plain")
                 setClassName(activitiesHandlingEmails.first().activityInfo.packageName, activitiesHandlingEmails.first().activityInfo.name)
 
                 putExtra(Intent.EXTRA_EMAIL, emailContent.to.toTypedArray())
@@ -136,23 +135,22 @@ class OpenMailAppPlugin : FlutterPlugin, MethodCallHandler {
             for (i in 1 until activitiesHandlingEmails.size) {
                 val activityHandlingEmail = activitiesHandlingEmails[i]
                 val packageName = activityHandlingEmail.activityInfo.packageName
-                    emailComposingIntents.add(
-                        LabeledIntent(
-                                Intent(Intent.ACTION_SENDTO).apply {
-                                    data = Uri.parse("mailto:")
-                                    type = "text/plain"
-                                    setClassName(activityHandlingEmail.activityInfo.packageName, activityHandlingEmail.activityInfo.name)
-                                    putExtra(Intent.EXTRA_EMAIL, emailContent.to.toTypedArray())
-                                    putExtra(Intent.EXTRA_CC, emailContent.cc.toTypedArray())
-                                    putExtra(Intent.EXTRA_BCC, emailContent.bcc.toTypedArray())
-                                    putExtra(Intent.EXTRA_SUBJECT, emailContent.subject)
-                                    putExtra(Intent.EXTRA_TEXT, emailContent.body)
-                                },
-                            packageName,
-                            activityHandlingEmail.loadLabel(packageManager),
-                            activityHandlingEmail.icon
-                        )
+                emailComposingIntents.add(
+                    LabeledIntent(
+                            Intent(Intent.ACTION_SENDTO).apply {
+                                setDataAndType(Uri.parse("mailto:"),"text/plain")
+                                setClassName(activityHandlingEmail.activityInfo.packageName, activityHandlingEmail.activityInfo.name)
+                                putExtra(Intent.EXTRA_EMAIL, emailContent.to.toTypedArray())
+                                putExtra(Intent.EXTRA_CC, emailContent.cc.toTypedArray())
+                                putExtra(Intent.EXTRA_BCC, emailContent.bcc.toTypedArray())
+                                putExtra(Intent.EXTRA_SUBJECT, emailContent.subject)
+                                putExtra(Intent.EXTRA_TEXT, emailContent.body)
+                            },
+                        packageName,
+                        activityHandlingEmail.loadLabel(packageManager),
+                        activityHandlingEmail.icon
                     )
+                )
             }
 
             val extraEmailComposingIntents = emailComposingIntents.toTypedArray()
@@ -194,8 +192,7 @@ class OpenMailAppPlugin : FlutterPlugin, MethodCallHandler {
         } ?: return false
 
         val composeEmailIntent = Intent(Intent.ACTION_SENDTO).apply {
-            data = Uri.parse("mailto:")
-            type = "text/plain"
+            setDataAndType(Uri.parse("mailto:"),"text/plain")
             setClassName(specificEmailActivity.activityInfo.packageName, specificEmailActivity.activityInfo.name)
             putExtra(Intent.EXTRA_EMAIL, emailContent.to.toTypedArray())
             putExtra(Intent.EXTRA_CC, emailContent.cc.toTypedArray())
